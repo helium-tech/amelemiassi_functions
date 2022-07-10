@@ -1,11 +1,15 @@
 const functions = require("firebase-functions");
 const admin = require('firebase-admin');
 
+
+const app = express();
 admin.initializeApp(functions.config().firebase)
 
 exports.getUserByEmail = functions.https.onRequest((request, response) => {
     console.log("query data", request.query);
-    admin.auth().getUserByEmail("charlesdzadu@gmail.com").then((res) => {
+    var data = request.query
+    var email = data['email']
+    admin.auth().getUserByEmail(email).then((res) => {
         console.log("succesfully get user :", res.toJSON())
         response.send(res.toJSON());
     }).catch((error) => {
@@ -13,10 +17,8 @@ exports.getUserByEmail = functions.https.onRequest((request, response) => {
     })
 });
 
-// Create and Deploy Your First Cloud Functions
-// https://firebase.google.com/docs/functions/write-firebase-functions
-
-exports.helloWorld = functions.https.onRequest((request, response) => {
-    functions.logger.info("Hello logs!", { structuredData: true });
-    response.send("Hello from Firebase!");
-});
+exports.paygateCallback = functions.https.onRequest((request, response) => {
+    if (request.method == "POST") {
+        return "C'est un post request";
+    }
+})
