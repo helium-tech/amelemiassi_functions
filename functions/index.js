@@ -1,5 +1,6 @@
 const functions = require("firebase-functions");
 const admin = require('firebase-admin');
+const FieldValue = require('firebase-admin').firestore.FieldValue;
 
 admin.initializeApp(functions.config().firebase)
 
@@ -42,7 +43,15 @@ exports.payementCallback = functions.https.onRequest((request, response) => {
         };
 
         admin.firestore().collection("paymentsTransactions").add(data).then((res) => {
-            response.send(request.headers);
+            var amount = body['amount'];
+            amount = parseInt(amount);
+            //TODORécupérer le user id afin d'incrémenter le compte
+            admin.firestore().collection('users').doc(userid).update({
+                balance: FieldValue.increment(amount),
+            }).then((data) => {
+                response.send(request.headers);
+
+            })
 
         }).catch((e) => {
             console.log("erruer", e);
@@ -58,6 +67,21 @@ exports.payementCallback = functions.https.onRequest((request, response) => {
         response.send(data);
     }
 })
+
+
+exports.updateUser = functions.https.onRequest((request, response) => {
+    var userid = request.query['userid'];
+    var amount = request.body['amount'];
+    amount = parseInt(amount);
+
+    admin.firestore().collection('users').doc(userid).update({
+        balance: FieldValue.increment(amount),
+    }).then((res) => {
+        response.send("Good")
+
+    })
+
+});
 
 
 
