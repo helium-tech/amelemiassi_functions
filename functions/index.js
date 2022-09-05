@@ -2,6 +2,9 @@ const functions = require("firebase-functions");
 const admin = require('firebase-admin');
 const FieldValue = require('firebase-admin').firestore.FieldValue;
 
+
+
+
 admin.initializeApp(functions.config().firebase)
 
 exports.getUserByEmail = functions.https.onRequest((request, response) => {
@@ -21,6 +24,7 @@ exports.getUserByEmail = functions.https.onRequest((request, response) => {
 exports.payementCallback = functions.https.onRequest((request, response) => {
     var body = request.body;
     var query = request.query;
+    var trxid = body["orderid"];
     if (request.method == "POST") {
         var data = {
             "orderid": body['orderid'],
@@ -42,21 +46,29 @@ exports.payementCallback = functions.https.onRequest((request, response) => {
 
         };
 
-        admin.firestore().collection("paymentsTransactions").add(data).then((res) => {
-            var amount = body['amount'];
-            amount = parseInt(amount);
-            //TODORécupérer le user id afin d'incrémenter le compte
-            admin.firestore().collection('users').doc(userid).update({
-                balance: FieldValue.increment(amount),
-            }).then((data) => {
-                response.send(request.headers);
+        admin.firestore().collection("transactions").doc(trxid).get().then((data) => {
+            if (data["_fieldsProto"] == null) {
+                response.send("data is null")
+            } else {
+                var useruid = data['_fieldsProto']['uid']['stringValue'];
+                admin.firestore().collection("transactions").doc(trxid).update(data).then((res) => {
+                    var amount = body['amount'];
+                    amount = parseInt(amount);
+                    admin.firestore().collection('users').doc(useruid).update({
+                        balance: FieldValue.increment(amount),
+                    }).then((data) => {
+                        response.send(request.headers);
 
-            })
+                    })
 
-        }).catch((e) => {
-            console.log("erruer", e);
-            response.send("Une erreur est survenue");
+                }).catch((e) => {
+                    console.log("erruer", e);
+                    response.send("Une erreur est survenue");
+                })
+            }
         })
+
+
 
 
 
@@ -82,6 +94,21 @@ exports.updateUser = functions.https.onRequest((request, response) => {
     })
 
 });
+
+
+exports.checkDataExist = functions.https.onRequest((request, response) => {
+    var id = request.query["id"];
+    admin.firestore().collection("users").doc(id).get().then((data) => {
+        if (data["_fieldsProto"] == null) {
+            response.send("est vide")
+        } else {
+
+            response.send(data['_fieldsProto']['uid']['stringValue']);
+        }
+    })
+
+
+})
 
 
 
