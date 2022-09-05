@@ -12,21 +12,72 @@ exports.getUserByEmail = functions.https.onRequest((request, response) => {
         response.send(res.toJSON());
     }).catch((error) => {
         console.log("an error occured when getting data", error)
+        response.statusCode = 404;
+        response.send({ message: "Utilisateur introuvable. Vérifier l'email" });
     })
 });
+
+exports.payementCallback = functions.https.onRequest((request, response) => {
+    var body = request.body;
+    var query = request.query;
+    if (request.method == "POST") {
+        var data = {
+            "orderid": body['orderid'],
+            "txref": body['txref'],
+            "payref": body['payref'],
+            "amount": body['amount'],
+            "paydatetime": body['paydatetime'],
+            "method": body['method'],
+            "phone": body['phone'],
+            "status": body['status'],
+
+
+            "user_agent_api": request.headers["user-agent"],
+            "x-appengine-citylatlong": request.headers['x-appengine-citylatlong'],
+            "x-appengine-city": request.headers['x-appengine-city'],
+            "x-appengine-country": request.headers['x-appengine-country'],
+            "x-appengine-user-ip": request.headers['x-appengine-user-ip'],
+
+
+        };
+
+        admin.firestore().collection("paymentsTransactions").add(data).then((res) => {
+            response.send(request.headers);
+
+        }).catch((e) => {
+            console.log("erruer", e);
+            response.send("Une erreur est survenue");
+        })
+
+
+
+    } else {
+        var data = {
+            "message": "Les requête avec ce verbe ne sont pas autorisé",
+        };
+        response.send(data);
+    }
+})
+
+
+
+
 
 exports.paygateCallback = functions.https.onRequest((request, response) => {
     var body = request.body;
     var query = request.query;
     if (request.method == "POST") {
         var data = {
-            "txReference": body['tx_reference'],
-            "identifier": body['identifier'],
-            "paymentReference": body['payment_reference'],
+            "orderid": body['orderid'],
+            "txref": body['txref'],
+            "payref": body['payref'],
             "amount": body['amount'],
-            "datetime": body['datetime'],
-            "payementMethod": body['payment_method'],
-            "phoneNumber": body['phone_number'],
+            "paydatetime": body['paydatetime'],
+            "method": body['method'],
+            "phone": body['phone'],
+            "status": body['status'],
+
+
             "user_agent_api": request.headers["user-agent"],
             "x-appengine-citylatlong": request.headers['x-appengine-citylatlong'],
             "x-appengine-city": request.headers['x-appengine-city'],
